@@ -7,7 +7,6 @@ use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
 use App\Http\Resources\EventResource;
 use App\Models\Event;
-use Illuminate\Http\Request;
 
 class EventController extends Controller
 {
@@ -16,7 +15,17 @@ class EventController extends Controller
      */
     public function index()
     {
-        return EventResource::collection(Event::with('user')->paginate());
+        $relations = ['user', 'attendees', 'attendees.user'];
+        $query = Event::query();
+
+        foreach ($relations as $relation) {
+            $query->when(
+                $this->shouldIncludeRelation($relation),
+                fn($q) => $q->with($relation)
+            );
+        }
+
+        return EventResource::collection($query->latest()->paginate());
     }
 
     /**
@@ -61,5 +70,18 @@ class EventController extends Controller
         $event->delete();
 
         return response()->noContent();
+    }
+
+    protected function shouldIncludeRelation(string $relation): bool
+    {
+        $include = request()->query('include');
+
+        if (!$include) {
+            return false;
+        }
+
+        $relations = array_map('trim', explode(',', $include));
+
+        return in_array($relation, $relations);
     }
 }
