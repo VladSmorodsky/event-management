@@ -6,24 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
 use App\Http\Resources\EventResource;
+use App\Http\Traits\CanLoadRelationship;
 use App\Models\Event;
 
 class EventController extends Controller
 {
+    use CanLoadRelationship;
+
+    protected array $relations = ['user', 'attendees', 'attendees.user'];
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $relations = ['user', 'attendees', 'attendees.user'];
-        $query = Event::query();
-
-        foreach ($relations as $relation) {
-            $query->when(
-                $this->shouldIncludeRelation($relation),
-                fn($q) => $q->with($relation)
-            );
-        }
+        $query = $this->loadRelations(Event::query());
 
         return EventResource::collection($query->latest()->paginate());
     }
@@ -36,7 +33,7 @@ class EventController extends Controller
         $validatedData = $request->validated();
         $validatedData['user_id'] = 1;
 
-        return new EventResource(Event::create($validatedData));
+        return new EventResource($this->loadRelations(Event::create($validatedData)));
     }
 
     /**
@@ -44,9 +41,7 @@ class EventController extends Controller
      */
     public function show(Event $event)
     {
-        $event->load('user', 'attendees');
-
-        return new EventResource($event);
+        return new EventResource($this->loadRelations($event));
     }
 
     /**
@@ -57,9 +52,8 @@ class EventController extends Controller
         $validatedData = $request->validated();
 
         $event->update($validatedData);
-        $event->load('user', 'attendees');
 
-        return new EventResource($event);
+        return new EventResource($this->loadRelations($event));
     }
 
     /**
@@ -70,18 +64,5 @@ class EventController extends Controller
         $event->delete();
 
         return response()->noContent();
-    }
-
-    protected function shouldIncludeRelation(string $relation): bool
-    {
-        $include = request()->query('include');
-
-        if (!$include) {
-            return false;
-        }
-
-        $relations = array_map('trim', explode(',', $include));
-
-        return in_array($relation, $relations);
     }
 }
