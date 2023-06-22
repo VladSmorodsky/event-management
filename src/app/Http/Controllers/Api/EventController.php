@@ -15,6 +15,11 @@ class EventController extends Controller
 
     protected array $relations = ['user', 'attendees', 'attendees.user'];
 
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum')->except(['index', 'show']);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -31,7 +36,7 @@ class EventController extends Controller
     public function store(StoreEventRequest $request)
     {
         $validatedData = $request->validated();
-        $validatedData['user_id'] = 1;
+        $validatedData['user_id'] = $request->user()->id;
 
         return new EventResource($this->loadRelations(Event::create($validatedData)));
     }
