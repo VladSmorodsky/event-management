@@ -8,6 +8,8 @@ use App\Http\Traits\CanLoadRelationship;
 use App\Models\Attendee;
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class AttendeeController extends Controller
 {
@@ -17,7 +19,8 @@ class AttendeeController extends Controller
 
     public function __construct()
     {
-        $this->middleware('auth:sanctum')->except(['index', 'show', 'update']);
+        $this->middleware('auth:sanctum');
+        $this->authorizeResource(Attendee::class, 'attendee');
     }
 
     /**
@@ -25,6 +28,9 @@ class AttendeeController extends Controller
      */
     public function index(Event $event)
     {
+        if (! Gate::check('see-attendees', $event)) {
+            abort(403);
+        }
         $attendees = $this->loadRelations($event->attendees()->latest());
 
         return AttendeeResource::collection($attendees->paginate());
@@ -47,6 +53,10 @@ class AttendeeController extends Controller
      */
     public function show(Event $event, Attendee $attendee)
     {
+        if (! Gate::check('see-attendees', $event)) {
+            abort(403);
+        }
+
         return new AttendeeResource($this->loadRelations($attendee));
     }
 
@@ -63,7 +73,7 @@ class AttendeeController extends Controller
      */
     public function destroy(Event $event, Attendee $attendee)
     {
-        $this->authorize('delete-attendee', [$event, $attendee]);
+//        $this->authorize('delete-attendee', [$event, $attendee]);
 
         $attendee->delete();
 

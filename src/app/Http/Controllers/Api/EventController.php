@@ -17,7 +17,8 @@ class EventController extends Controller
 
     public function __construct()
     {
-        $this->middleware('auth:sanctum')->except(['index', 'show']);
+        $this->middleware('auth:sanctum');
+        $this->authorizeResource(Event::class, 'event');
     }
 
     /**
@@ -54,7 +55,7 @@ class EventController extends Controller
      */
     public function update(UpdateEventRequest $request, Event $event)
     {
-        $this->authorize('update-event', $event);
+//        $this->authorize('update-event', $event);
 
         $validatedData = $request->validated();
 
@@ -68,7 +69,7 @@ class EventController extends Controller
      */
     public function destroy(Event $event)
     {
-        $this->authorize('delete-event', $event);
+//        $this->authorize('delete-event', $event);
 
         $event->delete();
 
