@@ -17,7 +17,8 @@ class EventReminder extends Notification
      * Create a new notification instance.
      */
     public function __construct(
-        private readonly Event $event
+        private readonly Event $event,
+        private readonly Attendee $attendee,
     ) {
         //
     }
@@ -38,7 +39,7 @@ class EventReminder extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-                    ->greeting("Dear ")
+                    ->greeting("Dear {$this->attendee->user->name}")
                     ->line('Upcoming Event Notification')
                     ->action("View event", route('events.show', $this->event->id))
                     ->line("The event {$this->event->name} due to {$this->event->start_at}")

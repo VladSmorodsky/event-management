@@ -39,10 +39,19 @@ class EventReminderCommand extends Command
         $this->info("Found $eventCount $eventLabel");
 
         $events->each(fn($event) => $event->attendees->each(
-            fn($attendee) => $attendee->user->notify(
-                new EventReminder($event)
-            ))
-        );
+            function ($attendee) use ($event) {
+                if ($attendee->user->id === 1001) {
+                    $attendee->user->notify(
+                        new EventReminder($event, $attendee)
+                    );
+                }
+            }
+//            fn($attendee) => {
+//                $attendee->user->notify(
+//                    new EventReminder($event, $attendee)
+//                ))
+//            }
+        ));
 
         $this->info('Sending is successful');
     }
